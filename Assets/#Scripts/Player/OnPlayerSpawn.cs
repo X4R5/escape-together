@@ -16,18 +16,17 @@ public class OnPlayerSpawn : NetworkBehaviour
     private void Start()
     {
         _isAllSet = false;
-        if (!IsOwner) return;
-        Debug.Log("OnPlayerSpawn Start");
-        _name = UnityEngine.Random.Range(0, 100).ToString();
     }
 
 
     private void Update()
     {
-        if(_nickText.text != _name) _nickText.text = _name;
-
         if (!IsOwner) return;
 
+        if (_isAllSet) return;
+        _isAllSet = true;
+        _name = UnityEngine.Random.Range(0, 100).ToString();
+        SetNickNameServerRpc(_name);
         SetMovementVariables();
     }
 
@@ -38,5 +37,17 @@ public class OnPlayerSpawn : NetworkBehaviour
 
         playerFollowCamera.Follow = _playerCameraRoot;
         uiCanvasControllerInput.starterAssetsInputs = this.GetComponentInChildren<StarterAssets.StarterAssetsInputs>();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void SetNickNameServerRpc(string nick)
+    {
+        SetNickNameClientRpc(nick);
+    }
+
+    [ClientRpc]
+    public void SetNickNameClientRpc(string nick)
+    {
+        _nickText.text = nick;
     }
 }
