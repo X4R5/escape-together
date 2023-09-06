@@ -1,16 +1,19 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using TMPro;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
+using Unity.Services.Relay;
 using UnityEngine;
 
-public class TestLobby : MonoBehaviour
+public class LobbyManager : MonoBehaviour
 {
+    public static LobbyManager Instance;
 
     Lobby _hostLobby, _joinedLobby;
     float _heartbeatTimer = 15f, _syncTimer = 2f;
@@ -21,6 +24,14 @@ public class TestLobby : MonoBehaviour
     [SerializeField] GameObject _joinedUI, _hostJoinUI, _playBtn;
 
     [SerializeField] TMP_Dropdown _playerModeDropdown;
+
+    public Dictionary<string,string> playerModes = new Dictionary<string, string>();
+
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     async void Start()
     {
@@ -72,7 +83,27 @@ public class TestLobby : MonoBehaviour
             _joinedLobby = lobby;
         }
 
+        if (_joinedLobby.Data["GameStart"].Value != "0")
+        {
+            if (IsHost()) return;
+
+            var players = _joinedLobby.Players;
+
+            playerModes.Add(AuthenticationService.Instance.PlayerId, players[1].Data["Mode"].Value);
+
+            RelayManager.Instance.JoinRelay(_joinedLobby.Data["GameStart"].Value);
+
+            _joinedLobby = null;
+
+            _joinedUI.SetActive(false);
+        }
+
         LobbyUI.Instance.UpdateLobbyUI(_joinedLobby);
+    }
+
+    private bool IsHost()
+    {
+        return _joinedLobby.HostId == AuthenticationService.Instance.PlayerId;
     }
 
     async void HandleLobbyHeartbeat()
@@ -115,6 +146,12 @@ public class TestLobby : MonoBehaviour
                         }
                     }
                 },
+                Data = new Dictionary<string, DataObject>()
+                {
+                    {
+                        "GameStart", new DataObject( DataObject.VisibilityOptions.Member, "0")
+                    }
+                }
             };
 
             var newLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
@@ -186,6 +223,9 @@ public class TestLobby : MonoBehaviour
                         },
                         {
                             "Ready", new PlayerDataObject( PlayerDataObject.VisibilityOptions.Public, "0")
+                        },
+                        {
+                            "GameStart", new PlayerDataObject( PlayerDataObject.VisibilityOptions.Member, "0")
                         }
                     }
                 }
@@ -242,7 +282,7 @@ public class TestLobby : MonoBehaviour
         }
     }
 
-    public void PlayBtn()
+    public async void PlayBtn()
     {
         var players = _joinedLobby.Players;
 
@@ -252,7 +292,7 @@ public class TestLobby : MonoBehaviour
             return;
         }
 
-        foreach(var player in players)
+        foreach (var player in players)
         {
             if (player.Data == null || player.Data["Mode"].Value == "0")
             {
@@ -275,7 +315,37 @@ public class TestLobby : MonoBehaviour
 
 
 
-        Debug.Log("Play!");
+        try
+        {
+            playerModes.Add(AuthenticationService.Instance.PlayerId, players[0].Data["Mode"].Value);
+
+            var relayCode = await RelayManager.Instance.CreateRelay();
+
+            var options = new UpdateLobbyOptions();
+
+            options.Data = new Dictionary<string, DataObject>()
+            {
+                {
+                    "GameStart", new DataObject( DataObject.VisibilityOptions.Member, relayCode )
+                }
+            };
+
+            var lobby = await LobbyService.Instance.UpdateLobbyAsync(_joinedLobby.Id, options);
+
+            _joinedLobby = lobby;
+
+            //Debug.Log("PlayBtn: " + options.Data["GameStart"].Value);
+
+            _joinedUI.SetActive(false);
+        }
+        catch (RelayServiceException e)
+        {
+            Debug.Log("PlayBtn: " + e.Message);
+        }
+        catch(LobbyServiceException e)
+        {
+            Debug.Log("PlayBtn: " + e.Message);
+        }
     }
 
     public void ReadyBtn()

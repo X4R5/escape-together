@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using Unity.Services.Lobbies;
+using Unity.Services.Authentication;
 
 public class PlayerMovement : NetworkBehaviour
 {
@@ -10,20 +12,15 @@ public class PlayerMovement : NetworkBehaviour
     float _currentMovementSpeed;
     Transform _playerObj;
 
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
         if (IsOwner)
         {
-            foreach (var _transform in GetComponentsInChildren<Transform>())
-            {
-                if (_transform == this.transform) continue;
-                _playerObj = _transform;
-                break;
-            }
+            _playerObj = transform.GetChild(0);
         }
-        Debug.Log("PlayerMovement OnNetworkSpawn playerObj: " + _playerObj.name);
     }
 
     void Update()

@@ -18,6 +18,8 @@ public class LobbyUI : MonoBehaviour
 
     internal void UpdateLobbyUI(Lobby joinedLobby)
     {
+        if (joinedLobby == null) return;
+
         var players = joinedLobby.Players;
 
         if (players.Count > 0 && players[0].Data["Ready"].Value == "1")
