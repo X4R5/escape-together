@@ -48,6 +48,8 @@ public class PlayerMovement : NetworkBehaviour
 
         transform.Translate(movement * Time.deltaTime * _currentMovementSpeed);
 
+        PlayerAnimationController.Instance.SetMovemetVariables(vertical, horizontal);
+
         if (movement != Vector3.zero)
         {
             _playerObj.rotation = Quaternion.Slerp(_playerObj.rotation, Quaternion.LookRotation(movement), Time.deltaTime * _rotationSpeed);
