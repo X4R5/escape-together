@@ -11,4 +11,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/Lobby.unity
     guid: eb9c0a1131c49c546ab1663b9ecf0f56
+  - enabled: 1
+    path: Assets/Scenes/puzzle deneme.unity
+    guid: c6be00897dea3f941b3cc2a41e00dfd1
   m_configObjects: {}
