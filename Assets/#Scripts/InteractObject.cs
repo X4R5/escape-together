@@ -1,29 +1,25 @@
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
 public class InteractObject : NetworkBehaviour
 {
-    bool _canInteract = false;
     [SerializeField] GameObject _setActiveObject;
 
     private void Update()
     {
-        if(!IsOwner) return;
-        if(!_canInteract) return;
+        if (!IsOwner) return;
 
         if (Input.GetKeyDown(KeyCode.E))
         {
-            _setActiveObject.SetActive(true);
+            Interact();
         }
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void Interact()
     {
-        if (other.CompareTag("Player"))
-        {
-            _canInteract = true;
-        }
+        if (!IsOwner) return;
+
+        _setActiveObject.SetActive(true);
     }
 }
